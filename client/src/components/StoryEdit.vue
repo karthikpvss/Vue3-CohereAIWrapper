@@ -16,6 +16,7 @@
                     v-model="title"
                     label="Story Title"
                     hide-details
+                    disabled
                 ></v-text-field>
             </v-col>
         </v-row>
@@ -140,7 +141,7 @@
                     rounded="xl"
                     @click="generateStory"
                 >
-                    Generate Story
+                    Regenerate Story
                 </v-btn>                   
             </v-col>
             <v-col cols="2" class="px-0">
@@ -185,7 +186,7 @@
             variant="flat"
             @click="saveOnClick"
         >
-            Save
+            Save New Version
         </v-btn>
         </v-card-actions>
   </v-card>
@@ -209,6 +210,7 @@
   import { CohereClient } from "cohere-ai"
   import StoryService from '@/services/StoryService'
   import ParameterService from '@/services/ParameterService'
+  import router from '../router'
 
     export default {
       data: () => ({
@@ -233,10 +235,36 @@
         loadingMSG: null,
         loadingOverlay: false,
         diableOverlay: false,
+        storyId: ""
       }),
   
       methods: {
         onLoad(){
+            if(this.$store.state.storyDetails != null){
+                this.title = this.$store.state.storyDetails.storyTitle
+                this.characterName = this.$store.state.storyDetails.characterName
+                this.characterRole = this.$store.state.storyDetails.characterRole
+                this.setting = this.$store.state.storyDetails.setting
+                this.country = this.$store.state.storyDetails.country
+                this.language = this.$store.state.storyDetails.language
+                this.genre = this.$store.state.storyDetails.genre
+                this.wordCount = this.$store.state.storyDetails.wordCount
+                this.storyText = this.$store.state.storyDetails.StoryResponse
+                this.storyId = this.$store.state.storyDetails.storyId
+                console.log(this.$store.state.storyDetails.storyPrompt)
+                console.log(this.storyText)
+
+                this.storyGenResponse = {
+                    "chatHistory": [
+                        { role: "USER", message: this.$store.state.storyDetails.storyPrompt}
+                    ],
+                "text": this.storyText
+                }
+            }
+            else{
+                router.push('/story')
+            }
+
             this.getRoles()
             this.getGenre()
             this.getSetings()
@@ -248,9 +276,10 @@
                 if(this.storyText != null){
                     this.setLoadingOverLay(true, "Please wait. Story is being saved...")
                     var storyPrompt = "Generate a " + this.genre +" genre story with title " + this.title + " and exactly " + this.wordCount + " words based on " + this.country + " country with character " + this.characterName + " as " + this.characterRole + " and backdrop as " + this.setting + " in " + this.language + " Language.";
-                    await StoryService.saveStory({
+                    await StoryService.saveStoryVersion({
                         title: this.title,
                         userID: this.$store.state.UserId,
+                        storyId: this.storyId,
                         storyPrompt: storyPrompt,
                         StoryResponse: this.storyText,
                         characterName: this.characterName,
@@ -264,7 +293,7 @@
                     }).then((response)=> {
                         console.log(response.statusText)
                         if(response.statusText == "OK"){
-                            this.clearFields()
+                            //this.clearFields()
                         }
                         this.setLoadingOverLay(false, "")
                     })
@@ -343,7 +372,6 @@
             }
         },
         clearFields(){
-            this.title= null 
             this.characterName= null 
             this.characterRole= null 
             this.setting= null 
@@ -439,9 +467,6 @@
                 this.setLoadingOverLay(false, "")
             })
         },
-      },
-      watch: {
-      
       },
       beforeMount(){
         this.onLoad()

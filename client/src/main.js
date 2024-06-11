@@ -21,7 +21,8 @@ const store = createStore({
         userId: "",
         username: "",
         permission: "",
-        isUserLoggedIn: false
+        isUserLoggedIn: false,
+        storyDetails: null,
       }
     },
     mutations: {
@@ -36,6 +37,12 @@ const store = createStore({
       },
       setIsUserLoggedIn (state, isUserLoggedIn){
         state.isUserLoggedIn = isUserLoggedIn
+      },
+      setStoryDetails (state, storyDetails){
+        state.storyDetails = storyDetails
+      },
+      getStoryDetails (state){
+        return state.storyDetails
       }
     }
   })
