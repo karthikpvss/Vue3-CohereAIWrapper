@@ -25,6 +25,7 @@
                   clearable
                   label="Email"
                   hide-details
+                  disabled="true"
                 ></v-text-field>
               </v-col>
             </v-row>
@@ -127,14 +128,12 @@
             <br/>
   
             <v-btn
-              :disabled="!form"
-              :loading="loading"
-              block
               color="#711429"
               size="large"
               type="submit"
               variant="elevated"
               rounded="xl"
+              @click = "updateUser"
             >
               Update profile
             </v-btn>
@@ -143,15 +142,27 @@
         </v-card>
   
       </v-container>
-  
-      <v-snackbar
-        v-model="snackbar"
-        :timeout="timeout"
-      >
-        Registeration Success. Please wait while redirecting...
-      </v-snackbar>
-  
     </v-sheet>
+
+    <v-overlay
+      :model-value="loadingOverlay"
+      class="align-center justify-center"
+      persistent
+    >
+        <v-progress-circular
+            color="#711429"
+            indeterminate
+            size="64"
+            class="align-center"
+        ></v-progress-circular>
+        <h3>{{loadingMSG}}</h3>
+    </v-overlay>
+    <v-snackbar
+      v-model="snackbar"
+      :timeout="timeout"
+    >
+      {{ snackbarMSG }}
+    </v-snackbar>
   </template>
   
   <script>
@@ -173,6 +184,7 @@
         showAlert: false,
         alertMessage: "",
         snackbar: false,
+        snackbarMSG: "",
         timeout: 2000,
         show1: false,
         show2: false,
@@ -199,7 +211,10 @@
             
             return 'Phone Number must be valid.'
           },
-        ]
+        ],
+
+        loadingMSG: "",
+        loadingOverlay: false
       }),
   
       methods: {
@@ -213,62 +228,87 @@
         required (v) {
           return !!v || 'Field is required'
         },
-        async registerClick(){
-          try{
-            await AuthenticationService.register({
-                email: this.email,
-                firstName: this.firstName,
-                lastName: this.lastName,
-                phoneNumber: this.phoneNumber,
-                gender: this.gender,
-                password: this.password,
-                permission: "user"
-            }).then((response)=> {
-                  console.log(response)
-                  if(response.statusText == "OK"){
-                    this.clearFields()
-                    this.snackbar = true
-                    setTimeout(() => (router.push('/login')), 1000)
-                  }
+        showError(errorText){
+          this.alertMessage = errorText;
+          this.showAlert = true;
+        },
+        async updateUser(){
+          console.log("update User.")
+          this.setLoadingOverLay(true, "Please wait updating details")
+          await AuthenticationService.updateUser({
+            email : this.email,
+            firstName : this.firstName,
+            lastName : this.lastName,
+            phoneNumber : this.phoneNumber,
+            gender : this.gender,
+            password : this.password
+          }).then((response)=> {
+              console.log(response)
+              if(response.statusText == "OK"){
+                  this.userOverlay = !this.userOverlay
+                  this.refreshUser = !this.refreshUser
+                  this.showSnackBar("User updated Successfully.")
                 }
+              this.setLoadingOverLay(false, "")
+          })
+        },
+        async getUser(){
+          console.log("get User.")
+          this.setLoadingOverLay(true, "Please wait fetching details")
+          try{
+            await AuthenticationService.getUser(sessionStorage.getItem('UserId')).then((response)=> {
+                console.log(response.statusText)
+                if(response.statusText == "OK"){
+                  this.email = response.data.email
+                  this.firstName = response.data.firstName
+                  this.lastName = response.data.lastName
+                  this.phoneNumber = response.data.phoneNumber
+                  this.gender = response.data.gender
+                }
+                this.setLoadingOverLay(false, "")
+              }
             )
           }
           catch(err){
             console.log(err)
-            this.showError(err)
+            this.setLoadingOverLay(false, "")
           }
         },
-        clearFields(){
-          this.password = ""
-          this.email = ""
-          this.passwordConfirm = ""
-          this.firstName = ""
-          this.lastName = ""
-          this.phoneNumber = ""
-          this.gender = ""
+        setLoadingOverLay(isShow, message){
+          if(isShow){
+            this.loadingOverlay = true
+            this.loadingMSG = message
+          }
+          else{
+            this.loadingOverlay = false
+            this.loadingMSG = null
+          }
         },
-        showError(errorText){
-          this.alertMessage = errorText;
-          this.showAlert = true;
+        showSnackBar(msg){
+            this.snackbar = true
+            this.snackbarMSG = msg
         }
       },
       watch: {
-      password: function () {
-        if(this.password != this.passwordConfirm){
-          this.showError("Password and confirm password must be same")
-        }
-        else{
-          this.showAlert = false;
+        password: function () {
+          if(this.password != this.passwordConfirm){
+            this.showError("Password and confirm password must be same")
+          }
+          else{
+            this.showAlert = false;
+          }
+        },
+        passwordConfirm: function () {
+          if(this.password != this.passwordConfirm){
+            this.showError("Password and Confirm Password must be same")
+          }
+          else{
+            this.showAlert = false;
+          }
         }
       },
-      passwordConfirm: function () {
-        if(this.password != this.passwordConfirm){
-          this.showError("Password and Confirm Password must be same")
-        }
-        else{
-          this.showAlert = false;
-        }
+      beforeMount(){
+        this.getUser()
       }
-    }
     }
   </script>

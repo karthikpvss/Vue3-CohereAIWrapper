@@ -22,7 +22,7 @@
                 </template>
 
                 <v-list-item
-                    v-for="ver in story.versions"
+                    v-for="ver in story.StoryVersionControls"
                     :key="ver.storyVersion"
                     :title= setVersion(ver.storyVersion)
                     prepend-icon="mdi-arrow-right"
@@ -100,7 +100,7 @@
             :paginate-elements-by-height="10"
             :filename="test"
             :pdf-quality="2"
-            :pdf-format="size"
+            pdf-format="a4"
             :ref="ref"
             id= "pdf"
             
@@ -167,6 +167,7 @@
                 return "Version: " + version
             },
             openStoryOverlay(story){
+                console.log(story)
                 this.currentSelectedStory = story
                 this.storyOverlay = !this.storyOverlay
             },
@@ -178,10 +179,8 @@
                     await StoryService.getStories(sessionStorage.getItem("UserId")).then((response)=> {
                         console.log(response)
                         if(response.statusText == "OK"){
-                            if(response.data.status){
-                                this.storys = response.data.response
-                                console.log("story length: "+response.data.response.StoryResponse.length)
-                            }
+                            this.storys = response.data
+                            console.log("story length: "+response.data.length)
                         }
                         this.setLoadingOverLay(false, "")
                     })

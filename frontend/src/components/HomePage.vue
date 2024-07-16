@@ -5,7 +5,7 @@
           density="compact"
           elevation="5"
         >
-          <v-app-bar-title>Teller AI</v-app-bar-title>
+          <v-app-bar-title>AI Story Generator</v-app-bar-title>
   
           <template v-slot:prepend>
             <v-btn
